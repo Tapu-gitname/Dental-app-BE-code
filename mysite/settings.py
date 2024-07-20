@@ -42,6 +42,12 @@ INSTALLED_APPS = [
     "corsheaders"
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ]
+}
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -72,7 +78,12 @@ TEMPLATES = [
     },
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",
+    "http://127.0.0.1:8000", 
+]
+
+# CORS_ALLOW_ALL_ORIGINS = True
 
 WSGI_APPLICATION = "mysite.wsgi.application"
 
