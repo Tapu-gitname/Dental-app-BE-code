@@ -7,6 +7,8 @@ from dental.serializers import *
 from rest_framework.response import Response
 from rest_framework import status
 from decimal import Decimal
+from datetime import date, datetime, time
+from django.db.models import Sum
 
 # Create your views here.
 # def index(request):
@@ -53,51 +55,8 @@ def get_all_treatments(request):
     serializer = DentalTreatmentSerializer(queryset, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-# @api_view(['POST'])
-# def update_fee(request):
-#     # serialzer = TreatmentSerializer(data=request.data)
-#     # if serialzer.is_valid():
-#     #     print("serialzer.validated_data", serialzer.validated_data)
-#     # print("serializer ===>", serialzer.data)
-#     print("request.data ===>", request.data)
-#     try:
-#         patient = Patient.objects.get(id = request.data.get('patient'))
-#         treatment_cost = patient.cost
-#         amount_paid = request.data.get('amount_paid')
-#         # remaining_amount = Treatment.objects.get_or_create(patient = patient).remaining_amount
-#         try:
-#             remaining_amount = Treatment.objects.values_list('remaining_amount', flat=True).get(patient=patient)
-#             if remaining_amount is None:
-#                 remaining_amount = treatment_cost
-#             # remaining_amount = queryset.
-#         except Treatment.DoesNotExist:
-#             remaining_amount = treatment_cost
-#         remaining_amount = remaining_amount - amount_paid
-#     except Exception as e:
-#         print("e ===>", e)
-
-#     treament = Treatment(
-#         patient = patient,
-#         treatment_cost = treatment_cost,
-#         amount_paid = amount_paid,
-#         remaining_amount = remaining_amount
-#     )
-#     treament.save()
-
-#     response_serializer = TreatmentSerializer(treament)
-    
-#     return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-
-
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from .models import Patient, Treatment
-from .serializers import TreatmentSerializer
-
 @api_view(['POST'])
 def update_fee(request):
-    print("request.data ===>", request.data)
     try:
         patient = Patient.objects.get(id=request.data.get('patient'))
         treatment_cost = patient.cost
@@ -140,6 +99,56 @@ def update_fee(request):
     except Exception as e:
         print("Exception occurred: ", e)
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET'])
+def date_range_revenue(request):
+    def daily_revenue():
+        now = datetime.now()
+        start_date = datetime.combine(now.date(), time.min)
+        end_date = datetime.now()
+
+        today_amount_paid = Treatment.objects.filter(
+        created_at__range=(start_date, end_date)
+        ).aggregate(total_paid=Sum('amount_paid'))['total_paid']
+        
+        if today_amount_paid is None:
+            today_amount_paid = 0
+
+        return today_amount_paid
+    
+    def monthly_revenue():
+        now = datetime.now()
+        start_date = datetime(now.year, now.month, 1)
+        end_date = now
+
+        monthly_amount_paid = Treatment.objects.filter(
+        created_at__range=(start_date, end_date)
+        ).aggregate(total_paid=Sum('amount_paid'))['total_paid']
+
+        if monthly_amount_paid is None:
+            monthly_amount_paid = 0
+    
+        return monthly_amount_paid
+    
+    def yearly_revenue():
+        now = datetime.now()
+        start_date = datetime(now.year, 1, 1)
+        end_date = now
+
+        yearly_amount_paid = Treatment.objects.filter(
+        created_at__range=(start_date, end_date)
+        ).aggregate(total_paid=Sum('amount_paid'))['total_paid']
+
+        if yearly_amount_paid is None:
+            yearly_amount_paid = 0
+
+        return yearly_amount_paid
+    
+    return Response({
+        'daily_revenue': daily_revenue(),
+        'monthly_revenue': monthly_revenue(),
+        'yearly_revenue': yearly_revenue()
+    }, status=status.HTTP_200_OK)
 
 
 
