@@ -55,6 +55,24 @@ def get_all_treatments(request):
     serializer = DentalTreatmentSerializer(queryset, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@api_view(['GET'])
+def get_remaining_amount(request):
+    # Extract patient_id from query parameters
+    patient_id = request.query_params.get('patient_id')
+    
+    if not patient_id:
+        return Response({"error": "patient_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Fetch the remaining amount, ordering by id in descending order, and get the first result
+    remaining_amount = Treatment.objects.filter(patient_id=patient_id).order_by('-id').values_list('remaining_amount', flat=True).first()
+    print('remaining amount is ====>', remaining_amount)
+    
+    if remaining_amount is None:
+        return Response({"error": "Treatment not found for the given patient_id"}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Return the remaining amount as JSON
+    return Response({"remaining_amount": remaining_amount}, status=status.HTTP_200_OK)
+
 @api_view(['POST'])
 def update_fee(request):
     try:

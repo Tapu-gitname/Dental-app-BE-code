@@ -1,4 +1,5 @@
 from django.db import models
+from decimal import Decimal
 
 # Create your models here.
 
@@ -27,10 +28,22 @@ class Patient(models.Model):
 class Treatment(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='treatments')
     treatment_cost = models.DecimalField(max_digits=10, decimal_places=2)
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
-    remaining_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Payment Receieved Date')
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    remaining_amount = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Payment Received Date')
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        # Ensure treatment_cost is assigned from patient's cost if not set
+        if self.treatment_cost is None:
+            self.treatment_cost = self.patient.cost
+        
+        # Ensure Decimal type calculations for precision
+        self.remaining_amount = Decimal(self.treatment_cost) - Decimal(self.amount_paid)
+        
+        super().save(*args, **kwargs)
+
+
 
     # def __str__(self):
     #     return self.patient

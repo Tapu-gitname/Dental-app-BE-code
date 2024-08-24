@@ -12,6 +12,7 @@ urlpatterns = [
     path('',include(router.urls)),
     path('get_all_treatments/', get_all_treatments, name='get_all_treatments'),
     path('update_fee/', update_fee),
-    path('gross_revenue/', date_range_revenue)
+    path('gross_revenue/', date_range_revenue),
+    path('get_remaining_amount', get_remaining_amount)
 ]
 # urlpatterns = router.urls
