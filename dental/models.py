@@ -39,7 +39,8 @@ class Treatment(models.Model):
             self.treatment_cost = self.patient.cost
         
         # Ensure Decimal type calculations for precision
-        self.remaining_amount = Decimal(self.treatment_cost) - Decimal(self.amount_paid)
+        if self.remaining_amount is None:
+            self.remaining_amount = Decimal(self.treatment_cost) - Decimal(self.amount_paid)
         
         super().save(*args, **kwargs)
 

@@ -5,18 +5,43 @@ from rest_framework.decorators import action, api_view
 from dental.models import *
 from dental.serializers import *
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, filters
 from decimal import Decimal
 from datetime import date, datetime, time
-from django.db.models import Sum
+from django.db.models import Sum, Q
+from rest_framework.pagination import PageNumberPagination
+# from django.db.models import Q
+
 
 # Create your views here.
 # def index(request):
 #     return HttpResponse("Hello World. You are at Dental app")
 
 class PatientViewSet(viewsets.ViewSet):
+    # Add pagination and search filters
+    pagination_class = PageNumberPagination
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name', 'phone', 'treatment']  # Add fields you want to enable search on
     def list(self, request):
-        queryset = Patient.objects.all()
+        queryset = Patient.objects.order_by('-id').all()
+        
+        # Apply search filtering
+        search_query = request.query_params.get('search', None)
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(phone__icontains=search_query) |
+                Q(treatment__icontains=search_query)
+            )
+        
+        # Apply pagination
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
+        if page is not None:
+            serializer = PatientSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        
+        # If no pagination is needed
         serializer = PatientSerializer(queryset, many=True)
         return Response(serializer.data)
     
